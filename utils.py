@@ -2,13 +2,15 @@
 # @Author: aaronlai
 # @Date:   2018-05-14 23:54:40
 # @Last Modified by:   AaronLai
-# @Last Modified time: 2018-05-15 00:03:34
+# @Last Modified time: 2018-05-16 16:50:23
 
 
 from encoder import build_encoder
 from decoder import build_decoder
 
 import tensorflow as tf
+import numpy as np
+import pandas as pd
 import os
 import sys
 
@@ -83,6 +85,88 @@ def compute_loss(source_ids, target_ids, sequence_mask, embeddings,
 
                 total_loss = reduced_loss + l2_regularize * l2_loss
                 return CE, total_loss, train_logits, infer_outputs
+
+
+def compute_perplexity(sess, CE, mask, feed_dict):
+    """
+    Compute perplexity for a batch of data
+    """
+    CE_words = sess.run([CE], feed_dict=feed_dict)
+    N_words = np.sum(mask)
+    return np.exp(CE_words / N_words)
+
+
+def loadfile(filename, is_source, max_length):
+    """
+    Load and clean data
+    """
+    def clean(row):
+        row = np.array(row.split(), dtype=np.int32)
+        leng = len(row)
+        if leng < max_length:
+            pads = -np.ones(max_length - leng, dtype=np.int32)
+            if is_source:
+                row = np.concatenate((pads, row))
+            else:
+                row = np.concatenate((row, pads))
+        elif leng > max_length:
+            row = row[:max_length]
+        return row
+
+    df = pd.read_csv(filename, header=None, index_col=None)
+    data = np.array(df[0].apply(lambda t: clean(t)).tolist(), dtype=np.int32)
+    return data
+
+
+def get_model_config(config):
+    enc_num_layers = config["encoder"]["num_layers"]
+    enc_num_units = config["encoder"]["num_units"]
+    enc_cell_type = config["encoder"]["cell_type"]
+    enc_bidir = config["encoder"]["bidirectional"]
+    dec_num_layers = config["decoder"]["num_layers"]
+    dec_num_units = config["decoder"]["num_units"]
+    dec_cell_type = config["decoder"]["cell_type"]
+    state_pass = config["decoder"]["state_pass"]
+    infer_batch_size = config["inference"]["infer_batch_size"]
+    infer_type = config["inference"]["type"]
+    beam_size = config["inference"]["beam_size"]
+    max_iter = config["inference"]["max_length"]
+    attn_num_units = config["decoder"]["attn_num_units"]
+    l2_regularize = config["training"]["l2_regularize"]
+
+    return (enc_num_layers, enc_num_units, enc_cell_type, enc_bidir,
+            dec_num_layers, dec_num_units, dec_cell_type, state_pass,
+            infer_batch_size, infer_type, beam_size, max_iter,
+            attn_num_units, l2_regularize)
+
+
+def get_training_config(config):
+    train_config = config["training"]
+    logdir = train_config["logdir"]
+    restore_from = train_config["restore_from"]
+
+    learning_rate = train_config["learning_rate"]
+    gpu_fraction = train_config["gpu_fraction"]
+    max_checkpoints = train_config["max_checkpoints"]
+    train_steps = train_config["train_steps"]
+    batch_size = train_config["batch_size"]
+    print_every = train_config["print_every"]
+
+    s_filename = train_config["train_source_file"]
+    t_filename = train_config["train_target_file"]
+    s_max_leng = train_config["source_max_length"]
+    t_max_leng = train_config["target_max_length"]
+
+    dev_s_filename = train_config["dev_source_file"]
+    dev_t_filename = train_config["dev_target_file"]
+
+    loss_fig = train_config["loss_fig"]
+    perp_fig = train_config["perplexity_fig"]
+
+    return (logdir, restore_from, learning_rate, gpu_fraction, max_checkpoints,
+            train_steps, batch_size, print_every, s_filename, t_filename,
+            s_max_leng, t_max_leng, dev_s_filename, dev_t_filename,
+            loss_fig, perp_fig)
 
 
 def load(saver, sess, logdir):
