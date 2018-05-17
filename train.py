@@ -2,7 +2,7 @@
 # @Author: aaronlai
 # @Date:   2018-05-14 19:08:20
 # @Last Modified by:   AaronLai
-# @Last Modified time: 2018-05-16 17:33:06
+# @Last Modified time: 2018-05-16 17:49:31
 
 
 from utils import init_embeddings, compute_loss, compute_perplexity, \
@@ -42,7 +42,7 @@ def main(args):
     print("Initializing embeddings ...")
     vocab_size = config["embeddings"]["vocab_size"]
     embed_size = config["embeddings"]["embed_size"]
-    embeddings = init_embeddings(vocab_size, embed_size)
+    embeddings = init_embeddings(vocab_size, embed_size, name=name)
     print("\tDone.")
 
     # Build the model and compute losses
@@ -109,17 +109,12 @@ def main(args):
         raise
 
     # ##### Training #####
-    last_saved_step = saved_global_step
-    num_steps = saved_global_step + train_steps
-    losses = []
-    steps = []
-    perps = []
-    dev_perps = []
+    # Load data
+    print("Loading data ...")
+
     # id_0, id_1, id_2 preserved for SOS, EOS, constant zero padding
     embed_shift = 3
 
-    # Load data
-    print("Loading data ...")
     source_data = loadfile(s_filename, is_source=True,
                            max_length=s_max_leng) + embed_shift
     target_data = loadfile(t_filename, is_source=False,
@@ -135,6 +130,14 @@ def main(args):
                                    max_length=t_max_leng) + embed_shift
         dev_masks = (dev_target_data != -1)
     print("\tDone.")
+
+    # Training
+    last_saved_step = saved_global_step
+    num_steps = saved_global_step + train_steps
+    losses = []
+    steps = []
+    perps = []
+    dev_perps = []
 
     print("Start training ...")
     try:

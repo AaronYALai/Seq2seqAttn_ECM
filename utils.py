@@ -2,7 +2,7 @@
 # @Author: aaronlai
 # @Date:   2018-05-14 23:54:40
 # @Last Modified by:   AaronLai
-# @Last Modified time: 2018-05-16 17:16:18
+# @Last Modified time: 2018-05-16 19:28:18
 
 
 from encoder import build_encoder
@@ -104,10 +104,13 @@ def loadfile(filename, is_source, max_length):
         row = np.array(row.split(), dtype=np.int32)
         leng = len(row)
         if leng < max_length:
-            pads = -np.ones(max_length - leng, dtype=np.int32)
             if is_source:
+                # represents constant zero padding
+                pads = -np.ones(max_length - leng, dtype=np.int32)
                 row = np.concatenate((pads, row))
             else:
+                # represents EOS token
+                pads = -2 * np.ones(max_length - leng, dtype=np.int32)
                 row = np.concatenate((row, pads))
         elif leng > max_length:
             row = row[:max_length]
