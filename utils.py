@@ -2,11 +2,11 @@
 # @Author: aaronlai
 # @Date:   2018-05-14 23:54:40
 # @Last Modified by:   AaronLai
-# @Last Modified time: 2018-05-16 19:28:18
+# @Last Modified time: 2018-05-16 22:25:16
 
 
-from encoder import build_encoder
-from decoder import build_decoder
+from model.encoder import build_encoder
+from model.decoder import build_decoder
 
 import tensorflow as tf
 import numpy as np

@@ -2,11 +2,11 @@
 # @Author: aaronlai
 # @Date:   2018-05-14 21:23:18
 # @Last Modified by:   AaronLai
-# @Last Modified time: 2018-05-16 17:06:01
+# @Last Modified time: 2018-05-16 22:27:13
 
 
 from tensorflow.contrib.framework import nest
-from greedy import DecoderOutput
+from .greedy import DecoderOutput
 
 import tensorflow as tf
 import numpy as np

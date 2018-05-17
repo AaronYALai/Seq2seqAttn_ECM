@@ -2,13 +2,13 @@
 # @Author: aaronlai
 # @Date:   2018-05-14 19:07:14
 # @Last Modified by:   AaronLai
-# @Last Modified time: 2018-05-16 17:10:08
+# @Last Modified time: 2018-05-16 22:27:30
 
 
-from cell import build_rnn_cell
-from greedy import GreedyDecodeCell
-from beamsearch import BeamSearchDecodeCell
-from dymdecode import dynamic_decode
+from .cell import build_rnn_cell
+from .greedy import GreedyDecodeCell
+from .beamsearch import BeamSearchDecodeCell
+from .dymdecode import dynamic_decode
 
 import tensorflow as tf
 import warnings

@@ -2,13 +2,13 @@
 # @Author: aaronlai
 # @Date:   2018-05-15 00:04:50
 # @Last Modified by:   AaronLai
-# @Last Modified time: 2018-05-16 22:17:14
+# @Last Modified time: 2018-05-16 22:39:27
 
 
 from utils import init_embeddings, compute_loss, get_model_config, \
                   loadfile, load
-from attention import AttentionWrapper
-from ECM import ECMWrapper
+from model.attention import AttentionWrapper
+from model.ECM import ECMWrapper
 
 import argparse
 import yaml
@@ -121,7 +121,14 @@ def main(args):
         batch = source_data[start:end]
 
         result = sess.run(infer_outputs, feed_dict={source_ids: batch})
-        final_result.append(result.ids[:, :, 0])
+        result = result.ids[:, :, 0]
+
+        if result.shape[1] < max_iter:
+            l_pad = max_iter - result.shape[1]
+            result = np.concatenate(
+                (result, np.ones((infer_batch_size, l_pad))), axis=1)
+
+        final_result.append(result)
 
     final_result = np.concatenate(final_result)[:n_data] - 3
     final_result[final_result < 0] = -1

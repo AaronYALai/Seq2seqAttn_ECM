@@ -2,11 +2,11 @@
 # @Author: aaronlai
 # @Date:   2018-05-14 19:03:01
 # @Last Modified by:   AaronLai
-# @Last Modified time: 2018-05-14 21:45:29
+# @Last Modified time: 2018-05-16 22:27:43
 
 
 from tensorflow.contrib.rnn import LSTMStateTuple
-from cell import build_rnn_cell
+from .cell import build_rnn_cell
 
 import tensorflow as tf
 

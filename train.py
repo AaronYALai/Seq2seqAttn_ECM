@@ -2,13 +2,13 @@
 # @Author: aaronlai
 # @Date:   2018-05-14 19:08:20
 # @Last Modified by:   AaronLai
-# @Last Modified time: 2018-05-16 22:06:26
+# @Last Modified time: 2018-05-16 22:24:57
 
 
 from utils import init_embeddings, compute_loss, compute_perplexity, \
         loadfile, get_model_config, get_training_config, load, save
-from attention import AttentionWrapper
-from ECM import ECMWrapper
+from model.attention import AttentionWrapper
+from model.ECM import ECMWrapper
 
 import argparse
 import time
