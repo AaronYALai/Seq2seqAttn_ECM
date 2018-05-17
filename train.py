@@ -2,7 +2,7 @@
 # @Author: aaronlai
 # @Date:   2018-05-14 19:08:20
 # @Last Modified by:   AaronLai
-# @Last Modified time: 2018-05-16 17:18:17
+# @Last Modified time: 2018-05-16 17:33:06
 
 
 from utils import init_embeddings, compute_loss, compute_perplexity, \
@@ -191,14 +191,19 @@ def main(args):
         if step > last_saved_step:
             save(saver, sess, logdir, step)
 
+        # plot loss
         plt.figure()
         plt.plot(losses)
         plt.savefig(loss_fig)
 
+        # plot perplexity
         plt.figure()
-        plt.plot(steps, perps)
+        if len(perps) > len(steps):
+            perps.pop()
+        plt.plot(steps, perps, label="train")
         if dev_source_data is not None:
-            plt.plot(steps, dev_perps)
+            plt.plot(steps, dev_perps, label="dev")
+        plt.legend()
         plt.savefig(perp_fig)
 
 
