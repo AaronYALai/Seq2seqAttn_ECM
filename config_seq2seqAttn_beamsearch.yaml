@@ -17,8 +17,11 @@ configuration:
     num_units: 256
   inference:
     beam_size: 5
-    infer_batch_size: 10
+    infer_batch_size: 15
+    infer_source_file: ./example/dev_source.txt
+    infer_source_max_length: 25
     max_length: 20
+    output_path: ./prediction.txt
     type: beam_search
   training:
     batch_size: 64

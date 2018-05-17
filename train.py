@@ -2,7 +2,7 @@
 # @Author: aaronlai
 # @Date:   2018-05-14 19:08:20
 # @Last Modified by:   AaronLai
-# @Last Modified time: 2018-05-16 17:49:31
+# @Last Modified time: 2018-05-16 22:06:26
 
 
 from utils import init_embeddings, compute_loss, compute_perplexity, \
@@ -24,7 +24,7 @@ def parse_args():
     '''
     parser = argparse.ArgumentParser(description="Run seq2seq training.")
 
-    parser.add_argument('--configuration', nargs='?',
+    parser.add_argument('--config', nargs='?',
                         default='./config_seq2seqAttn_beamsearch.yaml',
                         help='Configuration file for model specifications')
 
@@ -33,7 +33,7 @@ def parse_args():
 
 def main(args):
     # loading configurations
-    with open(args.configuration) as f:
+    with open(args.config) as f:
         config = yaml.safe_load(f)["configuration"]
 
     name = config["Name"]
