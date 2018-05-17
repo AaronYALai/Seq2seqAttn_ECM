@@ -2,7 +2,7 @@
 # @Author: aaronlai
 # @Date:   2018-05-14 23:54:40
 # @Last Modified by:   AaronLai
-# @Last Modified time: 2018-05-16 22:25:16
+# @Last Modified time: 2018-05-17 00:12:03
 
 
 from model.encoder import build_encoder
@@ -176,6 +176,7 @@ def get_training_config(config):
 def load(saver, sess, logdir):
     """
     Load the latest checkpoint
+    Ref: https://github.com/ibab/tensorflow-wavenet
     """
     print("Trying to restore saved checkpoints from {} ...".format(logdir),
           end="")
