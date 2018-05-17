@@ -1,0 +1,41 @@
+configuration:
+  Name: Seq2seq_BiLSTM_Attn_BeamSearch
+  decoder:
+    attn_num_units: 128
+    cell_type: LSTM
+    num_layers: 2
+    num_units: 256
+    state_pass: true
+    wrapper: Attention
+  embeddings:
+    embed_size: 128
+    vocab_size: 1000
+  encoder:
+    bidirectional: true
+    cell_type: LSTM
+    num_layers: 2
+    num_units: 256
+  inference:
+    beam_size: 5
+    infer_batch_size: 10
+    max_length: 20
+    type: beam_search
+  training:
+    batch_size: 64
+    checkpoint_every: 1000
+    dev_source_file: ./example/dev_source.txt
+    dev_target_file: ./example/dev_target.txt
+    gpu_fraction: 0.05
+    l2_regularize: null
+    learning_rate: 0.001
+    logdir: ./log_s2sattn/
+    loss_fig: ./training_loss_over_time
+    max_checkpoints: 10000
+    perplexity_fig: ./perplexity_over_time
+    print_every: 20
+    restore_from: ./log_s2sattn/
+    source_max_length: 25
+    target_max_length: 25
+    train_source_file: ./example/train_source.txt
+    train_steps: 5000
+    train_target_file: ./example/train_target.txt

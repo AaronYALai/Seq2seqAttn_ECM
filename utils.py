@@ -2,7 +2,7 @@
 # @Author: aaronlai
 # @Date:   2018-05-14 23:54:40
 # @Last Modified by:   AaronLai
-# @Last Modified time: 2018-05-16 16:50:23
+# @Last Modified time: 2018-05-16 17:16:18
 
 
 from encoder import build_encoder
@@ -91,7 +91,7 @@ def compute_perplexity(sess, CE, mask, feed_dict):
     """
     Compute perplexity for a batch of data
     """
-    CE_words = sess.run([CE], feed_dict=feed_dict)
+    CE_words = sess.run(CE, feed_dict=feed_dict)
     N_words = np.sum(mask)
     return np.exp(CE_words / N_words)
 
@@ -151,6 +151,7 @@ def get_training_config(config):
     train_steps = train_config["train_steps"]
     batch_size = train_config["batch_size"]
     print_every = train_config["print_every"]
+    checkpoint_every = train_config["checkpoint_every"]
 
     s_filename = train_config["train_source_file"]
     t_filename = train_config["train_target_file"]
@@ -164,9 +165,9 @@ def get_training_config(config):
     perp_fig = train_config["perplexity_fig"]
 
     return (logdir, restore_from, learning_rate, gpu_fraction, max_checkpoints,
-            train_steps, batch_size, print_every, s_filename, t_filename,
-            s_max_leng, t_max_leng, dev_s_filename, dev_t_filename,
-            loss_fig, perp_fig)
+            train_steps, batch_size, print_every, checkpoint_every,
+            s_filename, t_filename, s_max_leng, t_max_leng, dev_s_filename,
+            dev_t_filename, loss_fig, perp_fig)
 
 
 def load(saver, sess, logdir):

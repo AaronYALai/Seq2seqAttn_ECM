@@ -2,7 +2,7 @@
 # @Author: aaronlai
 # @Date:   2018-05-14 19:07:14
 # @Last Modified by:   AaronLai
-# @Last Modified time: 2018-05-14 21:49:44
+# @Last Modified time: 2018-05-16 17:10:08
 
 
 from cell import build_rnn_cell
@@ -89,16 +89,16 @@ def build_decoder(encoder_outputs, encoder_states, embeddings,
             if dec_init_states is None:
                 dec_init_states = cell.zero_state(infer_batch_size, dtype)
 
-            if infer_type == "greedy":
-                decoder_cell = GreedyDecodeCell(
-                    embeddings, cell, dec_init_states, output_layer,
-                    infer_batch_size, dtype)
-
-            elif infer_type == "beam_search":
+            if infer_type == "beam_search":
                 decoder_cell = BeamSearchDecodeCell(
                     embeddings, cell, dec_init_states, output_layer,
                     infer_batch_size, dtype, beam_size, vocab_size,
                     div_gamma=None, div_prob=None)
+
+            else:
+                decoder_cell = GreedyDecodeCell(
+                    embeddings, cell, dec_init_states, output_layer,
+                    infer_batch_size, dtype)
 
             # namedtuple(logits, ids)
             infer_outputs, _ = dynamic_decode(decoder_cell, max_iter)

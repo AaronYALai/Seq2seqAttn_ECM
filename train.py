@@ -2,7 +2,7 @@
 # @Author: aaronlai
 # @Date:   2018-05-14 19:08:20
 # @Last Modified by:   AaronLai
-# @Last Modified time: 2018-05-16 16:50:44
+# @Last Modified time: 2018-05-16 17:18:17
 
 
 from utils import init_embeddings, compute_loss, compute_perplexity, \
@@ -31,7 +31,7 @@ def parse_args():
     return parser.parse_args()
 
 
-def main():
+def main(args):
     # loading configurations
     with open(args.configuration) as f:
         config = yaml.safe_load(f)["configuration"]
@@ -39,9 +39,11 @@ def main():
     name = config["Name"]
 
     # Construct or load embeddings
+    print("Initializing embeddings ...")
     vocab_size = config["embeddings"]["vocab_size"]
     embed_size = config["embeddings"]["embed_size"]
     embeddings = init_embeddings(vocab_size, embed_size)
+    print("\tDone.")
 
     # Build the model and compute losses
     source_ids = tf.placeholder(tf.int32, [None, None], name="source")
@@ -60,18 +62,20 @@ def main():
      infer_batch_size, infer_type, beam_size, max_iter,
      attn_num_units, l2_regularize) = get_model_config(config)
 
+    print("Building model architecture ...")
     CE, loss, logits, infer_outputs = compute_loss(
         source_ids, target_ids, sequence_mask, embeddings,
         enc_num_layers, enc_num_units, enc_cell_type, enc_bidir,
         dec_num_layers, dec_num_units, dec_cell_type, state_pass,
         infer_batch_size, infer_type, beam_size, max_iter,
         attn_wrapper, attn_num_units, l2_regularize, name)
+    print("\tDone.")
 
     # Even if we restored the model, we will treat it as new training
     # if the trained model is written into an arbitrary location.
     (logdir, restore_from, learning_rate, gpu_fraction, max_checkpoints,
-     train_steps, batch_size, print_every, s_filename, t_filename,
-     s_max_leng, t_max_leng, dev_s_filename, dev_t_filename,
+     train_steps, batch_size, print_every, checkpoint_every, s_filename,
+     t_filename, s_max_leng, t_max_leng, dev_s_filename, dev_t_filename,
      loss_fig, perp_fig) = get_training_config(config)
 
     is_overwritten_training = logdir != restore_from
@@ -104,7 +108,7 @@ def main():
               "Training is terminated to avoid the overwriting.")
         raise
 
-    # Training the model
+    # ##### Training #####
     last_saved_step = saved_global_step
     num_steps = saved_global_step + train_steps
     losses = []
@@ -114,6 +118,8 @@ def main():
     # id_0, id_1, id_2 preserved for SOS, EOS, constant zero padding
     embed_shift = 3
 
+    # Load data
+    print("Loading data ...")
     source_data = loadfile(s_filename, is_source=True,
                            max_length=s_max_leng) + embed_shift
     target_data = loadfile(t_filename, is_source=False,
@@ -122,13 +128,15 @@ def main():
     n_data = len(source_data)
 
     dev_source_data = None
-    if dev_s_filename:
+    if dev_s_filename is not None:
         dev_source_data = loadfile(dev_s_filename, is_source=True,
                                    max_length=s_max_leng) + embed_shift
         dev_target_data = loadfile(dev_t_filename, is_source=False,
                                    max_length=t_max_leng) + embed_shift
         dev_masks = (dev_target_data != -1)
+    print("\tDone.")
 
+    print("Start training ...")
     try:
         for step in range(saved_global_step + 1, num_steps):
             start_time = time.time()
@@ -155,7 +163,7 @@ def main():
 
                 # dev perplexity
                 dev_str = ""
-                if dev_source_data:
+                if dev_source_data is not None:
                     dev_feed_dict = {
                         source_ids: dev_source_data,
                         target_ids: dev_target_data,
@@ -171,7 +179,7 @@ def main():
                 info += 'perp: {:.3f}, {}({:.3f} sec/step)'
                 print(info.format(step, loss_value, t_perp, dev_str, duration))
 
-            if step % args.checkpoint_every == 0:
+            if step % checkpoint_every == 0:
                 save(saver, sess, logdir, step)
                 last_saved_step = step
 
@@ -189,7 +197,7 @@ def main():
 
         plt.figure()
         plt.plot(steps, perps)
-        if dev_source_data:
+        if dev_source_data is not None:
             plt.plot(steps, dev_perps)
         plt.savefig(perp_fig)
 
