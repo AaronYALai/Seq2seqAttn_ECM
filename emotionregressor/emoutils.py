@@ -2,7 +2,7 @@
 # @Author: aaronlai
 # @Date:   2018-05-17 00:00:36
 # @Last Modified by:   AaronLai
-# @Last Modified time: 2018-05-18 00:19:12
+# @Last Modified time: 2018-05-18 14:43:26
 
 from scipy.stats import pearsonr
 from emoregressor import build_emotion_regressor
@@ -86,9 +86,14 @@ def loadfile(filename, max_length):
     data = []
     labels = []
     for row in df[0].values:
-        ids, emos = row.split(",")
-        ids = np.array(ids.split(" "), dtype=np.int32)
-        emos = np.array(emos.split(" "), dtype=np.float)
+        row = row.split(",")
+        if len(row) == 2:
+            ids, emos = row
+            ids = np.array(ids.split(" "), dtype=np.int32)
+            emos = np.array(emos.split(" "), dtype=np.float)
+        else:
+            ids = np.array(row[0].split(" "), dtype=np.float)
+            emos = None
 
         if len(ids) < max_length:
             # represents constant zero padding

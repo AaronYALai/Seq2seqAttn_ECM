@@ -3,13 +3,10 @@ configuration:
   embeddings:
     embed_size: 128
   inference:
-    beam_size: 5
     infer_batch_size: 15
-    infer_source_file: ./example/dev_source.txt
+    infer_source_file: ./emodata_dev
     infer_source_max_length: 25
-    max_length: 20
-    output_path: ./prediction.txt
-    type: beam_search
+    output_path: ./emoprediction.txt
   model:
     bidirectional: true
     cell_type: LSTM

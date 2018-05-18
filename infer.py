@@ -2,7 +2,7 @@
 # @Author: aaronlai
 # @Date:   2018-05-15 00:04:50
 # @Last Modified by:   AaronLai
-# @Last Modified time: 2018-05-16 22:39:27
+# @Last Modified time: 2018-05-18 14:35:48
 
 
 from utils import init_embeddings, compute_loss, get_model_config, \
@@ -88,8 +88,7 @@ def main(args):
             raise ValueError("Cannot find the checkpoint to restore from.")
 
     except Exception:
-        print("Something went wrong while restoring checkpoint. "
-              "Training is terminated to avoid the overwriting.")
+        print("Something went wrong while restoring checkpoint. ")
         raise
 
     # ##### Inference #####
@@ -130,7 +129,7 @@ def main(args):
 
         final_result.append(result)
 
-    final_result = np.concatenate(final_result)[:n_data] - 3
+    final_result = np.concatenate(final_result)[:n_data] - embed_shift
     final_result[final_result < 0] = -1
     final_result = final_result.astype(str).tolist()
     final_result = list(map(lambda t: " ".join(t), final_result))
