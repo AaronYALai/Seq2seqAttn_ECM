@@ -2,7 +2,7 @@
 # @Author: aaronlai
 # @Date:   2018-05-14 19:08:20
 # @Last Modified by:   AaronLai
-# @Last Modified time: 2018-05-16 22:24:57
+# @Last Modified time: 2018-05-19 16:31:59
 
 
 from utils import init_embeddings, compute_loss, compute_perplexity, \
@@ -167,13 +167,15 @@ def main(args):
                 # dev perplexity
                 dev_str = ""
                 if dev_source_data is not None:
+                    dev_inds = np.random.choice(
+                        len(dev_source_data), batch_size)
                     dev_feed_dict = {
-                        source_ids: dev_source_data,
-                        target_ids: dev_target_data,
-                        sequence_mask: dev_masks,
+                        source_ids: dev_source_data[dev_inds],
+                        target_ids: dev_target_data[dev_inds],
+                        sequence_mask: dev_masks[dev_inds],
                     }
                     dev_perp = compute_perplexity(
-                        sess, CE, dev_masks, dev_feed_dict)
+                        sess, CE, dev_masks[dev_inds], dev_feed_dict)
                     dev_perps.append(dev_perp)
                     dev_str = "dev_prep: {:.3f}, ".format(dev_perp)
 
@@ -197,6 +199,8 @@ def main(args):
         # plot loss
         plt.figure()
         plt.plot(losses)
+        plt.title("CE loss")
+        plt.xlabel("step")
         plt.savefig(loss_fig)
 
         # plot perplexity
@@ -205,7 +209,9 @@ def main(args):
             perps.pop()
         plt.plot(steps, perps, label="train")
         if dev_source_data is not None:
-            plt.plot(steps, dev_perps, label="dev")
+            plt.plot(steps[2:], dev_perps[2:], label="dev")
+        plt.title("perplexity")
+        plt.xlabel("step")
         plt.legend()
         plt.savefig(perp_fig)
 
