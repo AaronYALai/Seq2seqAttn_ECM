@@ -44,10 +44,10 @@ The provided example model is Seq2seq with attention with following configuratio
 **Training**: Cross entropy loss and evaluated by perplexity.
 
 #### Sample training loss:
-<img src="./example/training_loss_over_time.png" width="360">
+<img src="./example/training_loss_over_time.png" width="540">
 
 #### Sample perplexity:
-<img src="./example/perplexity_over_time.png" width="360">
+<img src="./example/perplexity_over_time.png" width="540">
 
 Usage
 --------
