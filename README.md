@@ -18,7 +18,7 @@ Features
 
 - Model Configuration: Support **YAML** format for easy configurations of model architecture.
 
-- Easy-to-trace: Build the pipeline with components (encoder, decoder, attention, beam search) with proper annotations.
+- Easy-to-trace: Build pipeline components (encoder, decoder, attention, beam search) with proper annotations.
 
 - Easy-to-understand: Focus on functional programming style which makes the workflow more understandable.
 

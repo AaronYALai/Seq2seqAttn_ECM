@@ -2,7 +2,7 @@
 # @Author: aaronlai
 # @Date:   2018-05-14 19:08:20
 # @Last Modified by:   AaronLai
-# @Last Modified time: 2018-05-19 16:31:59
+# @Last Modified time: 2018-05-19 19:28:32
 
 
 from utils import init_embeddings, compute_loss, compute_perplexity, \
@@ -15,7 +15,11 @@ import time
 import yaml
 import tensorflow as tf
 import numpy as np
-import matplotlib.pyplot as plt
+import matplotlib
+
+matplotlib.use('agg')
+
+import matplotlib.pyplot as plt   # noqa
 
 
 def parse_args():
@@ -207,9 +211,9 @@ def main(args):
         plt.figure()
         if len(perps) > len(steps):
             perps.pop()
-        plt.plot(steps, perps, label="train")
+        plt.plot(steps[5:], perps[5:], label="train")
         if dev_source_data is not None:
-            plt.plot(steps[2:], dev_perps[2:], label="dev")
+            plt.plot(steps[5:], dev_perps[5:], label="dev")
         plt.title("perplexity")
         plt.xlabel("step")
         plt.legend()
