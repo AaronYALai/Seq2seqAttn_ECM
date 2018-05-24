@@ -2,7 +2,7 @@
 # @Author: aaronlai
 # @Date:   2018-05-14 19:07:25
 # @Last Modified by:   AaronLai
-# @Last Modified time: 2018-05-14 22:52:42
+# @Last Modified time: 2018-05-24 00:46:04
 
 
 from tensorflow.contrib.rnn import RNNCell
@@ -24,7 +24,6 @@ class AttentionWrapper(RNNCell):
     def __init__(self, cell, memory, dec_init_states, num_hidden,
                  num_units, dtype):
         self._cell = cell
-        # transpose to [batch_size, num_units, max_time]
         self._memory = memory
         self.num_hidden = num_hidden
 
@@ -48,15 +47,17 @@ class AttentionWrapper(RNNCell):
             dec_init_states: None (no states pass), or encoder final states
             num_units: decoder's num of cell units
         """
-        if self._dec_init_states is None:
-            attn_state_0 = None
+        h_0 = tf.zeros([1, self._num_units], self._dtype)
+        context_0 = self._compute_context(h_0)
+        h_0 = context_0 * 0
 
+        if self._dec_init_states is None:
+            batch_size = tf.shape(self._memory)[0]
+            cell_states = self._cell.zero_state(batch_size, self._dtype)
         else:
             cell_states = self._dec_init_states
-            h_0 = tf.zeros([1, self._num_units], self._dtype)
-            context_0 = self._compute_context(h_0)
-            h_0 = context_0 * 0
-            attn_state_0 = AttnState(cell_states, h_0, context_0)
+
+        attn_state_0 = AttnState(cell_states, h_0, context_0)
 
         return attn_state_0
 
