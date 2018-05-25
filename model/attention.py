@@ -2,7 +2,7 @@
 # @Author: aaronlai
 # @Date:   2018-05-14 19:07:25
 # @Last Modified by:   AaronLai
-# @Last Modified time: 2018-05-24 00:46:04
+# @Last Modified time: 2018-05-24 17:11:25
 
 
 from tensorflow.contrib.rnn import RNNCell
@@ -46,6 +46,9 @@ class AttentionWrapper(RNNCell):
         Generate initial state for attn wrapped rnn cell
             dec_init_states: None (no states pass), or encoder final states
             num_units: decoder's num of cell units
+        Returns:
+            h_0: [batch_size, num_units]
+            context_0: [batch_size, num_units]
         """
         h_0 = tf.zeros([1, self._num_units], self._dtype)
         context_0 = self._compute_context(h_0)

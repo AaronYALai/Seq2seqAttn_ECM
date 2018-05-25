@@ -2,7 +2,7 @@
 # @Author: aaronlai
 # @Date:   2018-05-14 19:07:14
 # @Last Modified by:   AaronLai
-# @Last Modified time: 2018-05-16 22:27:30
+# @Last Modified time: 2018-05-25 00:41:00
 
 
 from .cell import build_rnn_cell
@@ -19,12 +19,11 @@ def build_decoder(encoder_outputs, encoder_states, embeddings,
                   state_pass=True, infer_batch_size=None,
                   attention_wrap=None, attn_num_units=128,
                   target_ids=None, infer_type="greedy", beam_size=None,
-                  max_iter=20, time_major=False, dtype=tf.float32,
-                  forget_bias=1.0, name="decoder"):
+                  max_iter=20, dtype=tf.float32, forget_bias=1.0,
+                  name="decoder"):
     """
     decoder: build rnn decoder with attention and
         target_ids: [batch_size, max_time]
-        mode: train or infer
         infer_type: greedy decode or beam search
         attention_wrap: a wrapper to enable attention mechanism
 
@@ -55,12 +54,7 @@ def build_decoder(encoder_outputs, encoder_states, embeddings,
 
         # wrap with attention
         if attention_wrap is not None:
-            # need batch-major
-            if time_major:
-                memory = tf.transpose(encoder_outputs, [1, 0, 2])
-            else:
-                memory = encoder_outputs
-
+            memory = encoder_outputs
             cell = attention_wrap(
                 cell, memory, dec_init_states, attn_num_units,
                 num_units, dtype)
