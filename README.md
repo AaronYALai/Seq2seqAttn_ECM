@@ -31,7 +31,7 @@ Example: Sorting of Integers
 
 See *example* folder for sample data.
 
-#### Model: Seq2seq with attention
+### Model: Seq2seq with attention
 
 **Embeddings**: 128-dimensional with vocabulary size 1000 representing integers from 0 to 999.
 
@@ -43,13 +43,13 @@ See *example* folder for sample data.
 
 **Training**: Cross entropy loss and evaluated by perplexity.
 
-Training loss:
+#### Training loss:
 <img src="./example/training_loss_over_time.png" width="540">
 
-Perplexity:
+#### Perplexity:
 <img src="./example/perplexity_over_time.png" width="540">
 
-#### Model: Emotional Chatting Machine
+### Model: Emotional Chatting Machine
 
 Prime numbers as simulated emotion words and they are equally split into **4** "emotion" categories.
 
@@ -61,17 +61,17 @@ Sequence with most primes from a certain category is tagged with that "emotion" 
 
 **External Memory**: Explicitly promote emotion words against generic words.
 
-Training loss:
+#### Training loss:
 <img src="./example/ECM_training_loss_over_time.png" width="540">
 
-Perplexity:
+#### Perplexity:
 <img src="./example/ECM_perplexity_over_time.png" width="540">
 
-Predicted Choices for emotion words:
-<img src="./example/ECM_perplexity_over_time.png" width="900">
+#### Predicted Choices for emotion words:
+<img src="./example/predict_choice.png" width="900">
 
-True Choices:
-<img src="./example/ECM_perplexity_over_time.png" width="900">
+#### True Choices:
+<img src="./example/true_choice.png" width="900">
 
 Usage
 --------
