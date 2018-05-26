@@ -4,13 +4,13 @@ Sequence to Sequence with Attention in TensorFlow and Emotional Chatting Machine
 About
 --------
 
-This project implements following models in TensorFlow with the focus on easy-to-trace-and-understand implementations.
+This project implements following models with the focus on easy-to-trace-and-understand implementations.
 
 - **Sequence-to-sequence with Attention** ([Intro](https://guillaumegenthial.github.io/sequence-to-sequence.html)): A general encoder-decoder framework that is widely used in Natural Language Processing such as translation, summarization, conversational bot, and more.
 
-- **Emotion Regression**: A bi-directional LSTM with self-attention model that predicts emotion intensities of a sentence *[anger, fear, joy, sadness]*, proposed by Baziotis, Christos, et al. (2018) for solving SemEval-2018 Task 1.
+- **Emotion Regression**: A bi-directional LSTM with self-attention that predicts emotion intensities of a sentence *[anger, fear, joy, sadness]*, proposed by Baziotis, Christos, et al. (2018) for solving SemEval-2018 Task 1.
 
-- **Emotional Chatting Machine**: An end-to-end framework from H. Zhou (2018) that captures the emotion factor and can generate emotional responses in open-domain conversational systems (emotional chatbots). 
+- **Emotional Chatting Machine**: An end-to-end framework from H. Zhou (2018) that can generate emotional responses in open-domain conversational systems (emotional chatbots).
 
 
 Features
@@ -22,9 +22,9 @@ Features
 
 - Easy-to-understand: Focus on functional programming style which makes the workflow more understandable.
 
-- Checkpoint Availability: Saving and loading of half-trained models are enabled using TensorFlow checkpoints.
+- Checkpoint Availability: Saving and loading of half-trained models are enabled (checkpoints).
 
-- Jupyter Notebook: Demonstrate the whole example workflow in Jupyter notebooks for one to easily play with.
+- Jupyter Notebook: Demonstrate the whole example workflow in Jupyter notebooks to easily play with.
 
 Example: Sorting of Integers
 ---------
@@ -33,21 +33,19 @@ See *example* folder for sample data.
 
 ### Model: Seq2seq with attention
 
-**Embeddings**: 128-dimensional with vocabulary size 1000 representing integers from 0 to 999.
+**Embeddings**: 128-dimension, 1000 vocabulary size (integers from 0 to 999).
 
-**Encoder**: 2-layer bi-directional LSTM with 256 hidden units.
+**Encoder-Decoder**: 2-layer bi-directional LSTM and 2-layer LSTM (256 hidden) with Bahdanau attention mechanism (128 hidden).
 
-**Decoder**: 2-layer LSTM with 256 hidden units and Bahdanau attention mechanism with 128 hidden units.
+**Inference**: Beam search decoding, beam size 5. 
 
-**Inference**: Beam search decoding with beam size 5. 
-
-**Training**: Cross entropy loss and evaluated by perplexity.
+**Training**: Cross entropy loss, evaluated by perplexity.
 
 | Training loss | Perplexity |
 | --- | --- |
-| <img src="./example/training_loss_over_time.png" width="450"> | <img src="./example/perplexity_over_time.png" width="450"> |
+| <img src="./example/training_loss_over_time.png" width="480"> | <img src="./example/perplexity_over_time.png" width="480"> |
 
-
+<br />
 ### Model: Emotional Chatting Machine
 
 Prime numbers as simulated emotion words and they are equally split into **4** "emotion" categories.
@@ -62,7 +60,7 @@ Sequence with most primes from a certain category is tagged with that "emotion" 
 
 | Training loss | Perplexity |
 | --- | --- |
-| <img src="./example/ECM_training_loss_over_time.png" width="450"> | <img src="./example/ECM_perplexity_over_time.png" width="450"> |
+| <img src="./example/ECM_training_loss_over_time.png" width="480"> | <img src="./example/ECM_perplexity_over_time.png" width="480"> |
 
 #### Predicted Choices for emotion words:
 <img src="./example/predict_choice.png" width="810">
