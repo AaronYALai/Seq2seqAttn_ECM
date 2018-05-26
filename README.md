@@ -10,7 +10,7 @@ This project implements following models in TensorFlow with the focus on easy-to
 
 - **Emotion Regression**: A bi-directional LSTM with self-attention model that predicts emotion intensities of a sentence *[anger, fear, joy, sadness]*, proposed by Baziotis, Christos, et al. (2018) for solving SemEval-2018 Task 1.
 
-- **Emotional Chatting Machine** (Ongoing): An end-to-end framework from H. Zhou (2018) that captures the emotion factor and can generate emotional responses in open-domain conversational systems (emotional chatbots). 
+- **Emotional Chatting Machine**: An end-to-end framework from H. Zhou (2018) that captures the emotion factor and can generate emotional responses in open-domain conversational systems (emotional chatbots). 
 
 
 Features
@@ -43,11 +43,10 @@ See *example* folder for sample data.
 
 **Training**: Cross entropy loss and evaluated by perplexity.
 
-#### Training loss:
-<img src="./example/training_loss_over_time.png" width="540">
+| Training loss | Perplexity |
+| --- | --- |
+| <img src="./example/training_loss_over_time.png" width="450"> | <img src="./example/perplexity_over_time.png" width="450"> |
 
-#### Perplexity:
-<img src="./example/perplexity_over_time.png" width="540">
 
 ### Model: Emotional Chatting Machine
 
@@ -61,17 +60,15 @@ Sequence with most primes from a certain category is tagged with that "emotion" 
 
 **External Memory**: Explicitly promote emotion words against generic words.
 
-#### Training loss:
-<img src="./example/ECM_training_loss_over_time.png" width="540">
-
-#### Perplexity:
-<img src="./example/ECM_perplexity_over_time.png" width="540">
+| Training loss | Perplexity |
+| --- | --- |
+| <img src="./example/ECM_training_loss_over_time.png" width="450"> | <img src="./example/ECM_perplexity_over_time.png" width="450"> |
 
 #### Predicted Choices for emotion words:
-<img src="./example/predict_choice.png" width="900">
+<img src="./example/predict_choice.png" width="810">
 
 #### True Choices:
-<img src="./example/true_choice.png" width="900">
+<img src="./example/true_choice.png" width="810">
 
 Usage
 --------
