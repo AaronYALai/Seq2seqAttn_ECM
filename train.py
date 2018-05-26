@@ -2,7 +2,7 @@
 # @Author: aaronlai
 # @Date:   2018-05-14 19:08:20
 # @Last Modified by:   AaronLai
-# @Last Modified time: 2018-05-25 17:55:42
+# @Last Modified time: 2018-05-25 18:40:15
 
 
 from utils import init_embeddings, compute_loss, compute_perplexity, \
@@ -201,7 +201,7 @@ def main(args):
         # plot loss
         plt.figure()
         plt.plot(losses)
-        plt.title("CE loss")
+        plt.title("Total loss")
         plt.xlabel("step")
         plt.savefig(loss_fig)
 
@@ -212,7 +212,7 @@ def main(args):
         plt.plot(steps[5:], perps[5:], label="train")
         if dev_source_data is not None:
             plt.plot(steps[5:], dev_perps[5:], label="dev")
-        plt.title("perplexity")
+        plt.title("Perplexity")
         plt.xlabel("step")
         plt.legend()
         plt.savefig(perp_fig)

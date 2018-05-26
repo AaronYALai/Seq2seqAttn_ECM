@@ -2,7 +2,7 @@
 # @Author: aaronlai
 # @Date:   2018-05-14 19:08:20
 # @Last Modified by:   AaronLai
-# @Last Modified time: 2018-05-25 18:11:44
+# @Last Modified time: 2018-05-25 18:39:30
 
 
 from utils import init_embeddings, compute_ECM_loss, compute_perplexity, \
@@ -62,7 +62,6 @@ def main(args):
      attn_num_units, l2_regularize) = get_ECM_config(config)
 
     print("Building model architecture ...")
-
     CE, loss, train_outs, infer_outputs = compute_ECM_loss(
         source_ids, target_ids, sequence_mask, choice_qs, embeddings,
         enc_num_layers, enc_num_units, enc_cell_type, enc_bidir,
@@ -225,7 +224,7 @@ def main(args):
         # plot loss
         plt.figure()
         plt.plot(losses)
-        plt.title("CE loss")
+        plt.title("Total loss")
         plt.xlabel("step")
         plt.savefig(loss_fig)
 
@@ -236,7 +235,7 @@ def main(args):
         plt.plot(steps[5:], perps[5:], label="train")
         if dev_source_data is not None:
             plt.plot(steps[5:], dev_perps[5:], label="dev")
-        plt.title("perplexity")
+        plt.title("Perplexity")
         plt.xlabel("step")
         plt.legend()
         plt.savefig(perp_fig)

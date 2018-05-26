@@ -2,12 +2,10 @@
 # @Author: aaronlai
 # @Date:   2018-05-15 00:04:50
 # @Last Modified by:   AaronLai
-# @Last Modified time: 2018-05-25 18:25:03
+# @Last Modified time: 2018-05-25 18:34:00
 
-
-from utils import init_embeddings, compute_loss, get_model_config, \
+from utils import init_embeddings, compute_ECM_loss, get_ECM_config, \
                   loadfile, load
-from model.attention import AttentionWrapper
 
 import argparse
 import yaml
@@ -18,12 +16,12 @@ import pandas as pd
 
 def parse_args():
     '''
-    Parse Seq2seq with attention arguments.
+    Parse Emotional Chatting Machine arguments.
     '''
-    parser = argparse.ArgumentParser(description="Run seq2seq inference.")
+    parser = argparse.ArgumentParser(description="Run ECM inference.")
 
     parser.add_argument('--config', nargs='?',
-                        default='./configs/config_seq2seqAttn_beamsearch.yaml',
+                        default='./configs/config_ECM.yaml',
                         help='Configuration file for model specifications')
 
     return parser.parse_args()
@@ -47,25 +45,22 @@ def main(args):
     source_ids = tf.placeholder(tf.int32, [None, None], name="source")
     target_ids = tf.placeholder(tf.int32, [None, None], name="target")
     sequence_mask = tf.placeholder(tf.bool, [None, None], name="mask")
-
-    attn_wrappers = {
-        "None": None,
-        "Attention": AttentionWrapper,
-    }
-    attn_wrapper = attn_wrappers.get(config["decoder"]["wrapper"])
+    choice_qs = tf.placeholder(tf.float32, [None, None], name="choice")
+    emo_cat = tf.placeholder(tf.int32, [None], name="emotion_category")
 
     (enc_num_layers, enc_num_units, enc_cell_type, enc_bidir,
      dec_num_layers, dec_num_units, dec_cell_type, state_pass,
-     infer_batch_size, infer_type, beam_size, max_iter,
-     attn_num_units, l2_regularize) = get_model_config(config)
+     num_emo, emo_cat_units, emo_int_units,
+     infer_batch_size, beam_size, max_iter,
+     attn_num_units, l2_regularize) = get_ECM_config(config)
 
     print("Building model architecture ...")
-    CE, loss, logits, infer_outputs = compute_loss(
-        source_ids, target_ids, sequence_mask, embeddings,
+    CE, loss, train_outs, infer_outputs = compute_ECM_loss(
+        source_ids, target_ids, sequence_mask, choice_qs, embeddings,
         enc_num_layers, enc_num_units, enc_cell_type, enc_bidir,
         dec_num_layers, dec_num_units, dec_cell_type, state_pass,
-        infer_batch_size, infer_type, beam_size, max_iter,
-        attn_wrapper, attn_num_units, l2_regularize, name)
+        num_emo, emo_cat, emo_cat_units, emo_int_units, infer_batch_size,
+        beam_size, max_iter, attn_num_units, l2_regularize, name)
     print("\tDone.")
 
     # Set up session
@@ -96,9 +91,13 @@ def main(args):
     # id_0, id_1, id_2 preserved for SOS, EOS, constant zero padding
     embed_shift = 3
     filename = config["inference"]["infer_source_file"]
+    c_filename = config["inference"]["infer_category_file"]
     max_leng = config["inference"]["infer_source_max_length"]
+
     source_data = loadfile(filename, is_source=True,
                            max_length=max_leng) + embed_shift
+    category_data = pd.read_csv(
+        c_filename, header=None, index_col=None, dtype=int)[0].values
     print("\tDone.")
 
     # Inference
@@ -111,13 +110,16 @@ def main(args):
 
     pad = np.zeros((n_pad, max_leng), dtype=np.int32)
     source_data = np.concatenate((source_data, pad))
+    category_data = np.concatenate((category_data, np.zeros(n_pad)))
 
     for ith in range(int(len(source_data) / infer_batch_size)):
         start = ith * infer_batch_size
         end = (ith + 1) * infer_batch_size
         batch = source_data[start:end]
+        batch_cat = category_data[start:end]
 
-        result = sess.run(infer_outputs, feed_dict={source_ids: batch})
+        result = sess.run(infer_outputs,
+                          feed_dict={source_ids: batch, emo_cat: batch_cat})
         result = result.ids[:, :, 0]
 
         if result.shape[1] < max_iter:
@@ -128,12 +130,22 @@ def main(args):
         final_result.append(result)
 
     final_result = np.concatenate(final_result)[:n_data] - embed_shift
+    choice_pred = (final_result >= vocab_size).astype(np.int)
+    final_result[final_result >= vocab_size] -= (vocab_size + embed_shift)
+
+    # transform to output format
     final_result[final_result < 0] = -1
     final_result = final_result.astype(str).tolist()
     final_result = list(map(lambda t: " ".join(t), final_result))
 
+    choice_pred = choice_pred.astype(str).tolist()
+    choice_pred = list(map(lambda t: " ".join(t), choice_pred))
+
     df = pd.DataFrame(data={"0": final_result})
     df.to_csv(config["inference"]["output_path"], header=None, index=None)
+
+    cdf = pd.DataFrame(data={"0": choice_pred})
+    cdf.to_csv(config["inference"]["choice_path"], header=None, index=None)
     print("\tDone.")
 
 
