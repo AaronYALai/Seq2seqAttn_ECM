@@ -26,12 +26,12 @@ Features
 
 - Jupyter Notebook: Demonstrate the whole example workflow in Jupyter notebooks for one to easily play with.
 
-Example
+Example: Sorting of Integers
 ---------
 
-The provided example data and task is **"sorting of integers"** (see *example* folder).
+See *example* folder for sample data.
 
-The provided example model is Seq2seq with attention with following configurations:
+#### Model: Seq2seq with attention
 
 **Embeddings**: 128-dimensional with vocabulary size 1000 representing integers from 0 to 999.
 
@@ -43,11 +43,35 @@ The provided example model is Seq2seq with attention with following configuratio
 
 **Training**: Cross entropy loss and evaluated by perplexity.
 
-#### Sample training loss:
+Training loss:
 <img src="./example/training_loss_over_time.png" width="540">
 
-#### Sample perplexity:
+Perplexity:
 <img src="./example/perplexity_over_time.png" width="540">
+
+#### Model: Emotional Chatting Machine
+
+Prime numbers as simulated emotion words and they are equally split into **4** "emotion" categories.
+
+Sequence with most primes from a certain category is tagged with that "emotion" category.
+
+**Emotion Category Embeddings**: 32-dimensional vector for each emotion.
+
+**Internal Memory**: 64-dimensional vector for each emotion.
+
+**External Memory**: Explicitly promote emotion words against generic words.
+
+Training loss:
+<img src="./example/ECM_training_loss_over_time.png" width="540">
+
+Perplexity:
+<img src="./example/ECM_perplexity_over_time.png" width="540">
+
+Predicted Choices for emotion words:
+<img src="./example/ECM_perplexity_over_time.png" width="900">
+
+True Choices:
+<img src="./example/ECM_perplexity_over_time.png" width="900">
 
 Usage
 --------
@@ -67,6 +91,14 @@ Install all requirements and run the model on example data and configuration:
     pip install -r requirements.txt
 
     python train.py
+
+    python infer.py
+
+Emotional Chatting Machine:
+
+    python train_ECM.py
+
+    python infer_ECM.py
 
 The installation of TensorFlow GPU version:
 
