@@ -35,7 +35,7 @@ See *example* folder for sample data.
 
 **Embeddings**: 128-dimension, 1000 vocabulary size (integers from 0 to 999).
 
-**Encoder-Decoder**: 2-layer bi-directional LSTM and 2-layer LSTM (256 hidden) with Bahdanau attention mechanism (128 hidden).
+**Encoder-Decoder**: 2-layer bi-directional LSTM and 2-layer LSTM (256 hidden) with Bahdanau attention mechanism.
 
 **Inference**: Beam search decoding, beam size 5. 
 
@@ -46,6 +46,7 @@ See *example* folder for sample data.
 | <img src="./example/training_loss_over_time.png" width="480"> | <img src="./example/perplexity_over_time.png" width="480"> |
 
 <br />
+
 ### Model: Emotional Chatting Machine
 
 Prime numbers as simulated emotion words and they are equally split into **4** "emotion" categories.
