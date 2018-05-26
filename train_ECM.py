@@ -2,18 +2,18 @@
 # @Author: aaronlai
 # @Date:   2018-05-14 19:08:20
 # @Last Modified by:   AaronLai
-# @Last Modified time: 2018-05-25 17:55:42
+# @Last Modified time: 2018-05-25 18:11:44
 
 
-from utils import init_embeddings, compute_loss, compute_perplexity, \
-        loadfile, get_model_config, get_training_config, load, save
-from model.attention import AttentionWrapper
+from utils import init_embeddings, compute_ECM_loss, compute_perplexity, \
+        loadfile, get_ECM_config, get_ECM_training_config, load, save
 
 import argparse
 import time
 import yaml
 import tensorflow as tf
 import numpy as np
+import pandas as pd
 import matplotlib
 
 matplotlib.use('agg')
@@ -23,12 +23,12 @@ import matplotlib.pyplot as plt   # noqa
 
 def parse_args():
     '''
-    Parse Seq2seq with attention arguments.
+    Parse Emotional Chatting Machine (ECM) arguments.
     '''
-    parser = argparse.ArgumentParser(description="Run seq2seq training.")
+    parser = argparse.ArgumentParser(description="Run ECM training.")
 
     parser.add_argument('--config', nargs='?',
-                        default='./configs/config_seq2seqAttn_beamsearch.yaml',
+                        default='./configs/config_ECM.yaml',
                         help='Configuration file for model specifications')
 
     return parser.parse_args()
@@ -52,33 +52,32 @@ def main(args):
     source_ids = tf.placeholder(tf.int32, [None, None], name="source")
     target_ids = tf.placeholder(tf.int32, [None, None], name="target")
     sequence_mask = tf.placeholder(tf.bool, [None, None], name="mask")
-
-    attn_wrappers = {
-        "None": None,
-        "Attention": AttentionWrapper,
-    }
-    attn_wrapper = attn_wrappers.get(config["decoder"]["wrapper"])
+    choice_qs = tf.placeholder(tf.float32, [None, None], name="choice")
+    emo_cat = tf.placeholder(tf.int32, [None], name="emotion_category")
 
     (enc_num_layers, enc_num_units, enc_cell_type, enc_bidir,
      dec_num_layers, dec_num_units, dec_cell_type, state_pass,
-     infer_batch_size, infer_type, beam_size, max_iter,
-     attn_num_units, l2_regularize) = get_model_config(config)
+     num_emo, emo_cat_units, emo_int_units,
+     infer_batch_size, beam_size, max_iter,
+     attn_num_units, l2_regularize) = get_ECM_config(config)
 
     print("Building model architecture ...")
-    CE, loss, logits, infer_outputs = compute_loss(
-        source_ids, target_ids, sequence_mask, embeddings,
+
+    CE, loss, train_outs, infer_outputs = compute_ECM_loss(
+        source_ids, target_ids, sequence_mask, choice_qs, embeddings,
         enc_num_layers, enc_num_units, enc_cell_type, enc_bidir,
         dec_num_layers, dec_num_units, dec_cell_type, state_pass,
-        infer_batch_size, infer_type, beam_size, max_iter,
-        attn_wrapper, attn_num_units, l2_regularize, name)
+        num_emo, emo_cat, emo_cat_units, emo_int_units, infer_batch_size,
+        beam_size, max_iter, attn_num_units, l2_regularize, name)
     print("\tDone.")
 
     # Even if we restored the model, we will treat it as new training
     # if the trained model is written into an arbitrary location.
     (logdir, restore_from, learning_rate, gpu_fraction, max_checkpoints,
      train_steps, batch_size, print_every, checkpoint_every, s_filename,
-     t_filename, s_max_leng, t_max_leng, dev_s_filename, dev_t_filename,
-     loss_fig, perp_fig) = get_training_config(config)
+     t_filename, q_filename, c_filename, s_max_leng, t_max_leng,
+     dev_s_filename, dev_t_filename, dev_q_filename, dev_c_filename,
+     loss_fig, perp_fig) = get_ECM_training_config(config)
 
     is_overwritten_training = logdir != restore_from
 
@@ -121,6 +120,14 @@ def main(args):
                            max_length=s_max_leng) + embed_shift
     target_data = loadfile(t_filename, is_source=False,
                            max_length=t_max_leng) + embed_shift
+
+    choice_data = loadfile(q_filename, is_source=False, max_length=t_max_leng)
+    choice_data[choice_data < 0] = 0
+    choice_data = choice_data.astype(np.float32)
+
+    category_data = pd.read_csv(
+        c_filename, header=None, index_col=None, dtype=int)[0].values
+
     masks = (target_data != -1)
     n_data = len(source_data)
 
@@ -130,6 +137,15 @@ def main(args):
                                    max_length=s_max_leng) + embed_shift
         dev_target_data = loadfile(dev_t_filename, is_source=False,
                                    max_length=t_max_leng) + embed_shift
+
+        dev_choice_data = loadfile(dev_q_filename, is_source=False,
+                                   max_length=t_max_leng)
+        dev_choice_data[dev_choice_data < 0] = 0
+        dev_choice_data = dev_choice_data.astype(np.float32)
+
+        dev_category_data = pd.read_csv(
+            dev_c_filename, header=None, index_col=None, dtype=int)[0].values
+
         dev_masks = (dev_target_data != -1)
     print("\tDone.")
 
@@ -148,11 +164,15 @@ def main(args):
             rand_indexes = np.random.choice(n_data, batch_size)
             source_batch = source_data[rand_indexes]
             target_batch = target_data[rand_indexes]
+            choice_batch = choice_data[rand_indexes]
+            emotions = category_data[rand_indexes]
             mask_batch = masks[rand_indexes]
 
             feed_dict = {
                 source_ids: source_batch,
                 target_ids: target_batch,
+                choice_qs: choice_batch,
+                emo_cat: emotions,
                 sequence_mask: mask_batch,
             }
 
@@ -171,11 +191,15 @@ def main(args):
                 if dev_source_data is not None:
                     dev_inds = np.random.choice(
                         len(dev_source_data), batch_size)
+
                     dev_feed_dict = {
                         source_ids: dev_source_data[dev_inds],
                         target_ids: dev_target_data[dev_inds],
+                        choice_qs: dev_choice_data[dev_inds],
+                        emo_cat: dev_category_data[dev_inds],
                         sequence_mask: dev_masks[dev_inds],
                     }
+
                     dev_perp = compute_perplexity(
                         sess, CE, dev_masks[dev_inds], dev_feed_dict)
                     dev_perps.append(dev_perp)

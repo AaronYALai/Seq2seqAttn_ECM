@@ -2,7 +2,7 @@
 # @Author: aaronlai
 # @Date:   2018-05-14 21:23:18
 # @Last Modified by:   AaronLai
-# @Last Modified time: 2018-05-16 22:27:13
+# @Last Modified time: 2018-05-25 18:04:58
 
 
 from tensorflow.contrib.framework import nest
@@ -153,6 +153,215 @@ class BeamSearchDecodeCell(object):
         new_beam_states = BeamDecoderCellStates(cell_states=new_cell_states,
                                                 log_probs=new_log_probs)
         new_output = BeamDecoderOutput(logits=logits, ids=new_ids,
+                                       parents=new_parents)
+
+        return (new_output, new_beam_states, new_inputs, new_decode_finished)
+
+    def finalize(self, final_outputs, final_cell_states):
+        """
+            final_outputs: [max_time, logits] structure of tensor
+            final_cell_states: BeamDecoderCellStates
+        Returns:
+            [max_time, batch_size, beam_size, ] stucture of tensor
+        """
+        # reverse the time dimension
+        max_iter = tf.shape(final_outputs.ids)[0]
+        final_outputs = nest.map_structure(lambda t: tf.reverse(t, axis=[0]),
+                                           final_outputs)
+
+        # initial states
+        def create_ta(d):
+            return tf.TensorArray(dtype=d, size=max_iter)
+
+        f_time_index = tf.constant(0, dtype=tf.int32)
+        # final output dtype
+        final_dtype = DecoderOutput(logits=self._dtype, ids=tf.int32)
+        f_output_ta = nest.map_structure(create_ta, final_dtype)
+
+        # initial parents: [batch_size, beam_size]
+        f_parents = tf.tile(
+            tf.expand_dims(tf.range(self._beam_size), axis=0),
+            multiples=[self._batch_size, 1])
+
+        def condition(f_time_index, output_ta, f_parents):
+            return tf.less(f_time_index, max_iter)
+
+        def body(f_time_index, output_ta, f_parents):
+            # get ids, logits and parents predicted at this time step
+            input_t = nest.map_structure(lambda t: t[f_time_index],
+                                         final_outputs)
+
+            # parents: reversed version shows the next position to go
+            new_beam_state = nest.map_structure(
+                lambda t: gather_helper(t, f_parents, self._batch_size,
+                                        self._beam_size),
+                input_t)
+
+            # create new output
+            new_output = DecoderOutput(logits=new_beam_state.logits,
+                                       ids=new_beam_state.ids)
+
+            # write beam ids
+            output_ta = nest.map_structure(
+                lambda ta, out: ta.write(f_time_index, out),
+                output_ta, new_output)
+
+            return (f_time_index + 1), output_ta, input_t.parents
+
+        with tf.variable_scope("beam_search_decoding"):
+            res = tf.while_loop(
+                    condition,
+                    body,
+                    loop_vars=[f_time_index, f_output_ta, f_parents],
+                    back_prop=False)
+
+        # stack the structure and reverse back
+        final_outputs = nest.map_structure(lambda ta: ta.stack(), res[1])
+        final_outputs = nest.map_structure(lambda t: tf.reverse(t, axis=[0]),
+                                           final_outputs)
+
+        return DecoderOutput(logits=final_outputs.logits,
+                             ids=final_outputs.ids)
+
+
+class ECMBeamSearchDecodeCell(object):
+
+    def __init__(self, embeddings, cell, dec_init_states, output_layer,
+                 emo_output_layer, emo_choice_layer, batch_size, dtype,
+                 beam_size, vocab_size, div_gamma=None, div_prob=None):
+        """
+            div_gamma: (float) relative weight of penalties
+            div_prob: (float) prob to apply penalties
+        """
+        self._embeddings = embeddings
+        self._vocab_size = vocab_size * 2
+        self._cell = cell
+        self._dec_init_states = dec_init_states
+
+        self._output_layer = output_layer
+        self._emo_output_layer = emo_output_layer
+        self._emo_choice_layer = emo_choice_layer
+
+        self._batch_size = batch_size
+        self._start_token = tf.nn.embedding_lookup(embeddings, 0)
+        self._end_id = 1
+        self._dtype = dtype
+
+        self._beam_size = beam_size
+        self._div_gamma = div_gamma
+        self._div_prob = div_prob
+
+        indices = np.repeat(np.arange(self._batch_size), self._beam_size)
+        if hasattr(self._cell, "_memory"):
+            self._cell._memory = tf.gather(self._cell._memory, indices)
+
+        if hasattr(self._cell, "_emo_cat_embs"):
+            self._cell._emo_cat_embs = tf.gather(
+                self._cell._emo_cat_embs, indices)
+
+        if hasattr(self._cell, "_emo_cat"):
+            self._emo_cat = tf.gather(self._cell._emo_cat, indices)
+
+    @property
+    def output_dtype(self):
+        """Generate the structure for initial TensorArrays in dynamic_decode"""
+        return BeamDecoderOutput(logits=self._dtype,
+                                 ids=tf.int32, parents=tf.int32)
+
+    def _initial_state(self):
+        # t: [batch_size, num_units]
+        cell_states = nest.map_structure(
+            lambda t: tile_beam(t, self._beam_size), self._dec_init_states)
+
+        # another "log_probs" initial states: accumulative log_prob!
+        log_probs = tf.zeros([self._batch_size, self._beam_size],
+                             dtype=self._dtype)
+
+        return BeamDecoderCellStates(cell_states, log_probs)
+
+    def initialize(self):
+        # initial cell states
+        cell_states = self._initial_state()
+
+        # inputs: SOS, [embed_size] -> [batch_size, beam_size, embed_size]
+        inputs = tf.tile(tf.reshape(self._start_token, [1, 1, -1]),
+                         multiples=[self._batch_size, self._beam_size, 1])
+
+        # initial ending signals: [batch_size, beam_size]
+        decode_finished = tf.zeros([self._batch_size, self._beam_size],
+                                   dtype=tf.bool)
+
+        return cell_states, inputs, decode_finished
+
+    def step(self, time_index, beam_states, inputs, decode_finished):
+        """
+            logits: [batch_size, beam_size, vocab_size]
+            ids: [batch_size, beam_size], best words ids now
+            parents: [batch_size, beam_size], previous step beam index ids
+        """
+        # 1-1: merge batch -> [batch_size*beam_size, ...]
+        cell_states = nest.map_structure(
+            merge_batch_beam, beam_states.cell_states)
+        inputs = merge_batch_beam(inputs)
+
+        # 1-2: perform cell ops to get new log probs
+        new_h, new_cell_states = self._cell.__call__(inputs, cell_states)
+        gen_log_probs = tf.nn.log_softmax(self._output_layer(new_h))
+        emo_log_probs = tf.nn.log_softmax(self._emo_output_layer(new_h))
+        alphas = tf.nn.sigmoid(self._emo_choice_layer(new_h))
+
+        gen_log_probs = gen_log_probs + tf.log(1 - alphas)
+        emo_log_probs = emo_log_probs + tf.log(alphas)
+        raw_log_probs = tf.concat([gen_log_probs, emo_log_probs], axis=-1)
+
+        # 1-3: split batch beam -> [batch_size, beam_size, ...]
+        raw_log_probs = split_batch_beam(raw_log_probs, self._beam_size)
+        new_cell_states = nest.map_structure(
+            lambda t: split_batch_beam(t, self._beam_size), new_cell_states)
+
+        # 2-1: mask log_probs, [batch_size, beam_size, vocab_size]
+        step_log_probs = mask_log_probs(
+            raw_log_probs, self._end_id, decode_finished)
+
+        # 2-2: add cumulative log_probs and "diversity penalty"
+        log_probs = tf.expand_dims(beam_states.log_probs, axis=-1)
+        log_probs = log_probs + step_log_probs
+        log_probs = add_diversity_penalty(log_probs, self._div_gamma,
+                                          self._div_prob, self._batch_size,
+                                          self._beam_size, self._vocab_size)
+
+        # 3-1: flatten, if time_index = 0, consider only one beam
+        # log_probs[:, 0]: [batch_size, vocab_size]
+        shape = [self._batch_size, self._beam_size * self._vocab_size]
+        log_probs_flat = tf.reshape(log_probs, shape)
+        log_probs_flat = tf.cond(time_index > 0, lambda: log_probs_flat,
+                                 lambda: log_probs[:, 0])
+
+        # 3-2: compute the top (beam_size) beams, [batch_size, beam_size]
+        new_log_probs, indices = tf.nn.top_k(log_probs_flat, self._beam_size)
+
+        # 3-3: obtain ids and parent beams
+        new_ids = indices % self._vocab_size
+        # //: floor division, know which beam it belongs to
+        new_parents = indices // self._vocab_size
+
+        # 4-1: compute new states
+        new_inputs = tf.nn.embedding_lookup(self._embeddings, new_ids)
+
+        decode_finished = gather_helper(
+            decode_finished, new_parents, self._batch_size, self._beam_size)
+
+        new_decode_finished = tf.logical_or(
+            decode_finished, tf.equal(new_ids, self._end_id))
+
+        new_cell_states = nest.map_structure(
+            lambda t: gather_helper(t, new_parents, self._batch_size,
+                                    self._beam_size), new_cell_states)
+
+        # 4-2: create new state and output of decoder
+        new_beam_states = BeamDecoderCellStates(cell_states=new_cell_states,
+                                                log_probs=new_log_probs)
+        new_output = BeamDecoderOutput(logits=raw_log_probs, ids=new_ids,
                                        parents=new_parents)
 
         return (new_output, new_beam_states, new_inputs, new_decode_finished)
