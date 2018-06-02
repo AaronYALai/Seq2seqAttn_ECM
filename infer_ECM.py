@@ -2,7 +2,7 @@
 # @Author: aaronlai
 # @Date:   2018-05-15 00:04:50
 # @Last Modified by:   AaronLai
-# @Last Modified time: 2018-05-25 18:34:00
+# @Last Modified time: 2018-06-01 22:29:10
 
 from utils import init_embeddings, compute_ECM_loss, get_ECM_config, \
                   loadfile, load
@@ -135,7 +135,7 @@ def main(args):
 
     # transform to output format
     final_result[final_result < 0] = -1
-    final_result = final_result.astype(str).tolist()
+    final_result = (final_result.astype(int)).astype(str).tolist()
     final_result = list(map(lambda t: " ".join(t), final_result))
 
     choice_pred = choice_pred.astype(str).tolist()

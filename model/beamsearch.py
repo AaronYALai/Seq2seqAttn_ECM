@@ -2,7 +2,7 @@
 # @Author: aaronlai
 # @Date:   2018-05-14 21:23:18
 # @Last Modified by:   AaronLai
-# @Last Modified time: 2018-05-25 18:04:58
+# @Last Modified time: 2018-06-01 22:27:17
 
 
 from tensorflow.contrib.framework import nest
@@ -234,6 +234,7 @@ class ECMBeamSearchDecodeCell(object):
             div_prob: (float) prob to apply penalties
         """
         self._embeddings = embeddings
+        self._origin_vocab_size = vocab_size
         self._vocab_size = vocab_size * 2
         self._cell = cell
         self._dec_init_states = dec_init_states
@@ -346,7 +347,8 @@ class ECMBeamSearchDecodeCell(object):
         new_parents = indices // self._vocab_size
 
         # 4-1: compute new states
-        new_inputs = tf.nn.embedding_lookup(self._embeddings, new_ids)
+        new_inputs = tf.nn.embedding_lookup(
+            self._embeddings, (new_ids % self._origin_vocab_size))
 
         decode_finished = gather_helper(
             decode_finished, new_parents, self._batch_size, self._beam_size)
