@@ -2,7 +2,7 @@
 # @Author: aaronlai
 # @Date:   2018-05-14 19:08:20
 # @Last Modified by:   AaronLai
-# @Last Modified time: 2018-05-25 18:40:15
+# @Last Modified time: 2018-07-02 21:41:00
 
 
 from utils import init_embeddings, compute_loss, compute_perplexity, \
@@ -121,7 +121,7 @@ def main(args):
                            max_length=s_max_leng) + embed_shift
     target_data = loadfile(t_filename, is_source=False,
                            max_length=t_max_leng) + embed_shift
-    masks = (target_data != -1)
+    masks = (target_data >= embed_shift)
     n_data = len(source_data)
 
     dev_source_data = None
@@ -130,7 +130,7 @@ def main(args):
                                    max_length=s_max_leng) + embed_shift
         dev_target_data = loadfile(dev_t_filename, is_source=False,
                                    max_length=t_max_leng) + embed_shift
-        dev_masks = (dev_target_data != -1)
+        dev_masks = (dev_target_data >= embed_shift)
     print("\tDone.")
 
     # Training
