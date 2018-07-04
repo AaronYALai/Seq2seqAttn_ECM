@@ -2,7 +2,7 @@
 # @Author: aaronlai
 # @Date:   2018-05-14 23:54:40
 # @Last Modified by:   AaronLai
-# @Last Modified time: 2018-05-25 18:11:13
+# @Last Modified time: 2018-07-03 22:43:33
 
 
 from model.encoder import build_encoder
@@ -72,7 +72,7 @@ def compute_loss(source_ids, target_ids, sequence_mask, embeddings,
             losses = tf.nn.sparse_softmax_cross_entropy_with_logits(
                 logits=train_logits, labels=final_ids)
 
-            losses = tf.boolean_mask(losses, sequence_mask)
+            losses = tf.boolean_mask(losses[:, :-1], sequence_mask)
             reduced_loss = tf.reduce_mean(losses)
             CE = tf.reduce_sum(losses)
 
@@ -144,13 +144,13 @@ def compute_ECM_loss(source_ids, target_ids, sequence_mask, choice_qs,
             alpha_reg = tf.reduce_mean(choice_qs * -tf.log(alphas))
             int_mem_reg = tf.reduce_mean(tf.norm(int_M_emo, axis=1))
 
-            losses = tf.boolean_mask(losses, sequence_mask)
+            losses = tf.boolean_mask(losses[:, :-1], sequence_mask)
             reduced_loss = tf.reduce_mean(losses) + alpha_reg + int_mem_reg
 
             # prepare for perplexity computations
             CE = tf.nn.sparse_softmax_cross_entropy_with_logits(
                 logits=train_log_probs, labels=final_ids)
-            CE = tf.boolean_mask(CE, sequence_mask)
+            CE = tf.boolean_mask(CE[:, :-1], sequence_mask)
             CE = tf.reduce_sum(CE)
 
             train_outs = (cell, train_log_probs, alphas, int_M_emo)

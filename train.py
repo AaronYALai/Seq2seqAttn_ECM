@@ -2,7 +2,7 @@
 # @Author: aaronlai
 # @Date:   2018-05-14 19:08:20
 # @Last Modified by:   AaronLai
-# @Last Modified time: 2018-07-02 21:41:00
+# @Last Modified time: 2018-07-03 22:33:55
 
 
 from utils import init_embeddings, compute_loss, compute_perplexity, \
@@ -122,6 +122,8 @@ def main(args):
     target_data = loadfile(t_filename, is_source=False,
                            max_length=t_max_leng) + embed_shift
     masks = (target_data >= embed_shift)
+    masks = np.append(np.ones([len(masks), 1], dtype=bool), masks, axis=1)
+    masks = masks[:, :-1]
     n_data = len(source_data)
 
     dev_source_data = None
@@ -131,6 +133,9 @@ def main(args):
         dev_target_data = loadfile(dev_t_filename, is_source=False,
                                    max_length=t_max_leng) + embed_shift
         dev_masks = (dev_target_data >= embed_shift)
+        dev_masks = np.append(
+            np.ones([len(dev_masks), 1], dtype=bool), dev_masks, axis=1)
+        dev_masks = dev_masks[:, :-1]
     print("\tDone.")
 
     # Training

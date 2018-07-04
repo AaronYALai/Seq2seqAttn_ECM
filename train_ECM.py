@@ -2,7 +2,7 @@
 # @Author: aaronlai
 # @Date:   2018-05-14 19:08:20
 # @Last Modified by:   AaronLai
-# @Last Modified time: 2018-07-02 21:43:00
+# @Last Modified time: 2018-07-03 22:35:13
 
 
 from utils import init_embeddings, compute_ECM_loss, compute_perplexity, \
@@ -128,6 +128,8 @@ def main(args):
         c_filename, header=None, index_col=None, dtype=int)[0].values
 
     masks = (target_data >= embed_shift)
+    masks = np.append(np.ones([len(masks), 1], dtype=bool), masks, axis=1)
+    masks = masks[:, :-1]
     n_data = len(source_data)
 
     dev_source_data = None
@@ -146,6 +148,9 @@ def main(args):
             dev_c_filename, header=None, index_col=None, dtype=int)[0].values
 
         dev_masks = (dev_target_data >= embed_shift)
+        dev_masks = np.append(
+            np.ones([len(dev_masks), 1], dtype=bool), dev_masks, axis=1)
+        dev_masks = dev_masks[:, :-1]
     print("\tDone.")
 
     # Training
